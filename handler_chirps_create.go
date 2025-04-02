@@ -2,14 +2,24 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/kiganoakuma/chirpy/internal/database"
 )
+
+type Chirp struct {
+	ID        uuid.UUID `json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	Body      string    `json:"body"`
+	UserId    uuid.UUID `json:"user_id"`
+}
 
 func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
@@ -28,21 +38,10 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	const maxChirpLength = 140
-	if len(params.Body) > maxChirpLength {
-		respondWithError(w, http.StatusBadRequest, "Chirp is too long", nil)
-		return
+	filteredBody, err := validateChirp(params.Body)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, err.Error(), err)
 	}
-
-	profaneWords := []string{
-		"kerfuffle",
-		"sharbert",
-		"fornax",
-	}
-
-	const replacmentChars = "****"
-
-	filteredBody := replaceWords(params.Body, profaneWords, replacmentChars)
 
 	chirp, err := cfg.db.CreateChirp(r.Context(), database.CreateChirpParams{
 		Body:   filteredBody,
@@ -61,6 +60,23 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request)
 			UserId:    params.UserId,
 		},
 	})
+}
+
+func validateChirp(body string) (string, error) {
+	const maxChirpLength = 140
+	if len(body) > maxChirpLength {
+		return "", errors.New("Chirp is too long")
+	}
+
+	profaneWords := []string{
+		"kerfuffle",
+		"sharbert",
+		"fornax",
+	}
+	const replacmentChars = "****"
+	filteredBody := replaceWords(body, profaneWords, replacmentChars)
+
+	return filteredBody, nil
 }
 
 func replaceWords(input string, profanity []string, replacement string) string {
