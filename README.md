@@ -67,4 +67,4 @@ The application follows a standard Go project layout:
 - internal/database: Database interaction layer
 - Various handler functions for API endpoints
 
-Note: This documentation is a high-level overview and will be updated as more specific details about the application are provided.
+Note: This documentation is a high-level overview and will be updated as more specific details about the application are provided..
