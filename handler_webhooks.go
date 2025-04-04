@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/kiganoakuma/chirpy/internal/auth"
 )
 
 func (cfg *apiConfig) handlerUpgradeUser(w http.ResponseWriter, r *http.Request) {
@@ -12,6 +13,16 @@ func (cfg *apiConfig) handlerUpgradeUser(w http.ResponseWriter, r *http.Request)
 		Data  struct {
 			UserID string `json:"user_id"`
 		} `json:"data"`
+	}
+
+	apiKey, err := auth.GetApiKey(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "No api key found", err)
+		return
+	}
+
+	if cfg.polkakey != apiKey {
+		respondWithError(w, 401, "Unauthorized api key", nil)
 	}
 
 	params, err := DecodeJSONBody[paramaters](r)

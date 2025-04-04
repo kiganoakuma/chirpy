@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -10,6 +11,17 @@ import (
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
+
+func GetApiKey(headers http.Header) (string, error) {
+	authHeader := headers.Get("Authorization")
+
+	headerParts := strings.Split(authHeader, " ")
+	if len(headerParts) != 2 || headerParts[0] != "ApiKey" {
+		return "", errors.New("no Authorization header found")
+	}
+	return headerParts[1], nil
+
+}
 
 func AuthHeaderHelper(w http.ResponseWriter, r *http.Request) (string, string) {
 
