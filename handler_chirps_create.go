@@ -3,13 +3,13 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	"log"
 	"net/http"
 	"regexp"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/kiganoakuma/chirpy/internal/auth"
 	"github.com/kiganoakuma/chirpy/internal/database"
 )
 
@@ -22,44 +22,61 @@ type Chirp struct {
 }
 
 func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request) {
+	// Only expect the body in the request
 	type parameters struct {
-		Body   string    `json:"body"`
-		UserId uuid.UUID `json:"user_id"`
-	}
-	type response struct {
-		Chirp
+		Body string `json:"body"`
 	}
 
+	// First, extract and validate the JWT token
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Unauthorized: missing or invalid token", err)
+		return
+	}
+
+	// Validate the token and get the user ID
+	userID, err := auth.ValidateJWT(token, cfg.jwtsecret)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Unauthorized: invalid token", err)
+		return
+	}
+
+	// decode the request body
 	decoder := json.NewDecoder(r.Body)
 	params := parameters{}
-	err := decoder.Decode(&params)
+	err = decoder.Decode(&params)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't decode parameters", err)
 		return
 	}
 
+	// Validate the chirp content
 	filteredBody, err := validateChirp(params.Body)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, err.Error(), err)
+		return
 	}
 
+	// Create the chirp in the database
 	chirp, err := cfg.db.CreateChirp(r.Context(), database.CreateChirpParams{
 		Body:   filteredBody,
-		UserID: params.UserId,
+		UserID: userID,
 	})
 	if err != nil {
-		log.Fatalf("could not create chirp: %s", err)
+		respondWithError(w, http.StatusInternalServerError, "Could not create chirp", err)
+		return
 	}
 
-	respondWithJSON(w, http.StatusCreated, response{
-		Chirp: Chirp{
-			ID:        chirp.ID,
-			CreatedAt: chirp.CreatedAt,
-			UpdatedAt: chirp.UpdatedAt,
-			Body:      chirp.Body,
-			UserId:    params.UserId,
-		},
-	})
+	respose := Chirp{
+		ID:        chirp.ID,
+		CreatedAt: chirp.CreatedAt,
+		UpdatedAt: chirp.UpdatedAt,
+		Body:      chirp.Body,
+		UserId:    chirp.UserID,
+	}
+
+	// Return the created chirp
+	respondWithJSON(w, http.StatusCreated, respose)
 }
 
 func validateChirp(body string) (string, error) {

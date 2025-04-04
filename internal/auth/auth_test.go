@@ -1,8 +1,12 @@
 package auth
 
 import (
-	"golang.org/x/crypto/bcrypt"
 	"testing"
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func TestHashPassword(t *testing.T) {
@@ -52,4 +56,92 @@ func TestCheckPassword(t *testing.T) {
 	if err == nil {
 		t.Error("CheckPassword should fail with incorrect password")
 	}
+}
+
+func TestMakeAndValidateJWT(t *testing.T) {
+	userID := uuid.New()
+	secret := "test_secret_key"
+	expiresIn := time.Hour * 24
+
+	tokenString, err := MakeJWT(userID, secret, expiresIn)
+	if err != nil {
+		t.Fatalf("Failed to create JWT: %v", err)
+	}
+
+	returnedID, err := ValidateJWT(tokenString, secret)
+	if err != nil {
+		t.Fatalf("Failed to validate JWT: %v", err)
+	}
+
+	if returnedID != userID {
+		t.Errorf("UserID mismatch. Expected: %s, Got: %s", userID, returnedID)
+	}
+}
+
+func TestExpiredToken(t *testing.T) {
+	userID := uuid.New()
+	secret := "test-secret-key"
+	expiration := time.Millisecond * 10
+
+	tokenString, err := MakeJWT(userID, secret, expiration)
+	if err != nil {
+		t.Fatalf("Failed to create JWT: %v", err)
+	}
+
+	time.Sleep(time.Millisecond * 20)
+
+	_, err = ValidateJWT(tokenString, secret)
+	if err == nil {
+		t.Error("Expected error for expired token, but got nil")
+	}
+}
+
+func TestInvalidSignature(t *testing.T) {
+	userID := uuid.New()
+	secret := "test-secret-key"
+	wrongSecret := "wrong-secret"
+	expiration := time.Hour * 24
+
+	tokenString, err := MakeJWT(userID, secret, expiration)
+	if err != nil {
+		t.Fatalf("Failed to  create JWT: %v", err)
+	}
+
+	_, err = ValidateJWT(tokenString, wrongSecret)
+	if err == nil {
+		t.Error("Expected error for invalid signature, but got nil")
+	}
+}
+
+func TestMalformedToken(t *testing.T) {
+	malformedToken := "not.a.valid.token"
+	secret := "test-secret"
+
+	_, err := ValidateJWT(malformedToken, secret)
+	if err == nil {
+		t.Error("Expected error for malformed token, but got nil")
+	}
+}
+
+func TestTokenWithInvalidUUID(t *testing.T) {
+	claims := jwt.RegisteredClaims{
+		Issuer:    "Chirpy",
+		IssuedAt:  jwt.NewNumericDate(time.Now()),
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
+		Subject:   "not-a-valid-uuid", // Invalid UUID format
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	secret := "test-secret"
+
+	tokenString, err := token.SignedString([]byte(secret))
+	if err != nil {
+		t.Fatalf("Failed to sign test token: %v", err)
+	}
+
+	_, err = ValidateJWT(tokenString, secret)
+	if err == nil {
+		t.Error("Expected error for token with invalid UUID, but got nil")
+	}
+
 }

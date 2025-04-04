@@ -6,6 +6,13 @@ import (
 	"net/http"
 )
 
+func DecodeJSONBody[T any](r *http.Request) (T, error) {
+	var params T
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&params)
+	return params, err
+}
+
 func respondWithError(w http.ResponseWriter, code int, msg string, err error) {
 	if err != nil {
 		log.Println(err)

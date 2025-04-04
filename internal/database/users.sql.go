@@ -20,7 +20,7 @@ values (
   $1,
   $2
 )
-returning id, created_at, updated_at, email, hashed_password
+returning id, created_at, updated_at, email, hashed_password, is_chirpy_red
 `
 
 type CreateUserParams struct {
@@ -37,12 +37,13 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.UpdatedAt,
 		&i.Email,
 		&i.HashedPassword,
+		&i.IsChirpyRed,
 	)
 	return i, err
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-select id, created_at, updated_at, email, hashed_password from users
+select id, created_at, updated_at, email, hashed_password, is_chirpy_red from users
 where email = $1
 `
 
@@ -55,12 +56,13 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.UpdatedAt,
 		&i.Email,
 		&i.HashedPassword,
+		&i.IsChirpyRed,
 	)
 	return i, err
 }
 
 const getUserById = `-- name: GetUserById :one
-select id, created_at, updated_at, email, hashed_password from users
+select id, created_at, updated_at, email, hashed_password, is_chirpy_red from users
 where id = $1
 `
 
@@ -73,6 +75,46 @@ func (q *Queries) GetUserById(ctx context.Context, id uuid.UUID) (User, error) {
 		&i.UpdatedAt,
 		&i.Email,
 		&i.HashedPassword,
+		&i.IsChirpyRed,
 	)
 	return i, err
+}
+
+const putUserCredentials = `-- name: PutUserCredentials :one
+update users
+set email = $1,
+    hashed_password = $2
+where id = $3
+returning id, created_at, updated_at, email, hashed_password, is_chirpy_red
+`
+
+type PutUserCredentialsParams struct {
+	Email          string
+	HashedPassword string
+	ID             uuid.UUID
+}
+
+func (q *Queries) PutUserCredentials(ctx context.Context, arg PutUserCredentialsParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, putUserCredentials, arg.Email, arg.HashedPassword, arg.ID)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Email,
+		&i.HashedPassword,
+		&i.IsChirpyRed,
+	)
+	return i, err
+}
+
+const upgradeToRedByID = `-- name: UpgradeToRedByID :exec
+update users
+set is_chirpy_red = true
+where id = $1
+`
+
+func (q *Queries) UpgradeToRedByID(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, upgradeToRedByID, id)
+	return err
 }
