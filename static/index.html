@@ -1,0 +1,942 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chirpy - Web Interface</title>
+    <style>
+      :root {
+        --primary: #1da1f2;
+        --primary-dark: #0d8bd9;
+        --secondary: #657786;
+        --light: #f5f8fa;
+        --border: #e1e8ed;
+        --text: #14171a;
+        --error: #e0245e;
+        --success: #17bf63;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif;
+      }
+
+      body {
+        background-color: var(--light);
+        color: var(--text);
+        line-height: 1.6;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      header {
+        background-color: white;
+        padding: 15px 0;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+
+      header .container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 20px;
+      }
+
+      .logo {
+        font-size: 24px;
+        font-weight: bold;
+        color: var(--primary);
+        text-decoration: none;
+      }
+
+      nav ul {
+        display: flex;
+        list-style: none;
+      }
+
+      nav ul li {
+        margin-left: 20px;
+      }
+
+      nav ul li a {
+        text-decoration: none;
+        color: var(--secondary);
+        font-weight: 500;
+        transition: color 0.3s;
+      }
+
+      nav ul li a:hover {
+        color: var(--primary);
+      }
+
+      .section {
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        margin-bottom: 20px;
+      }
+
+      .section h2 {
+        margin-bottom: 15px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 10px;
+        color: var(--primary);
+      }
+
+      .form-group {
+        margin-bottom: 15px;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 500;
+      }
+
+      .form-group input,
+      .form-group textarea,
+      .form-group select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid var(--border);
+        border-radius: 5px;
+        font-size: 16px;
+      }
+
+      .form-group textarea {
+        resize: vertical;
+        min-height: 80px;
+      }
+
+      button {
+        background-color: var(--primary);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background-color 0.3s;
+      }
+
+      button:hover {
+        background-color: var(--primary-dark);
+      }
+
+      .result {
+        margin-top: 15px;
+        padding: 15px;
+        border-radius: 5px;
+        background-color: var(--light);
+        border: 1px solid var(--border);
+        white-space: pre-wrap;
+        overflow-x: auto;
+      }
+
+      .chirp-list {
+        margin-top: 20px;
+      }
+
+      .chirp {
+        border: 1px solid var(--border);
+        border-radius: 5px;
+        padding: 15px;
+        margin-bottom: 10px;
+        background-color: white;
+      }
+
+      .chirp-author {
+        font-weight: bold;
+        color: var(--primary);
+      }
+
+      .chirp-content {
+        margin: 10px 0;
+      }
+
+      .chirp-actions {
+        display: flex;
+        gap: 10px;
+      }
+
+      .btn-delete {
+        background-color: var(--error);
+      }
+
+      .btn-delete:hover {
+        background-color: #c01e52;
+      }
+
+      .auth-info {
+        margin-bottom: 15px;
+        padding: 10px;
+        background-color: #e8f5fd;
+        border-radius: 5px;
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      .tabs {
+        display: flex;
+        margin-bottom: 20px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .tab {
+        padding: 10px 20px;
+        cursor: pointer;
+        background-color: transparent;
+        border: none;
+        color: var(--secondary);
+        font-weight: 500;
+      }
+
+      .tab.active {
+        color: var(--primary);
+        border-bottom: 2px solid var(--primary);
+      }
+
+      .tab-content {
+        display: none;
+      }
+
+      .tab-content.active {
+        display: block;
+      }
+
+      .footer {
+        text-align: center;
+        padding: 20px 0;
+        color: var(--secondary);
+        border-top: 1px solid var(--border);
+        margin-top: 40px;
+      }
+
+      .notification {
+        padding: 10px 15px;
+        border-radius: 5px;
+        margin-bottom: 15px;
+      }
+
+      .success {
+        background-color: #daf7e8;
+        color: var(--success);
+        border: 1px solid var(--success);
+      }
+
+      .error {
+        background-color: #fae0e7;
+        color: var(--error);
+        border: 1px solid var(--error);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="container">
+        <a href="#" class="logo">Chirpy</a>
+        <nav>
+          <ul>
+            <li><a href="#chirps">Chirps</a></li>
+            <li><a href="#users">Users</a></li>
+            <li><a href="#auth">Auth</a></li>
+            <li><a href="#admin">Admin</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <div class="container">
+      <div id="notification" class="notification hidden"></div>
+
+      <section id="chirps" class="section">
+        <h2>Chirps</h2>
+
+        <div class="tabs">
+          <button class="tab active" data-target="create-chirp">
+            Create Chirp
+          </button>
+          <button class="tab" data-target="view-chirps">View Chirps</button>
+        </div>
+
+        <div id="create-chirp" class="tab-content active">
+          <div class="auth-info">Please login first to create chirps.</div>
+
+          <form id="createChirpForm">
+            <div class="form-group">
+              <label for="chirpContent">Chirp content:</label>
+              <textarea id="chirpContent" required></textarea>
+            </div>
+            <button type="submit">Create Chirp</button>
+          </form>
+
+          <div id="createChirpResult" class="result hidden"></div>
+        </div>
+
+        <div id="view-chirps" class="tab-content">
+          <div class="form-group">
+            <label for="chirpFilter">Filter by Chirp ID (optional):</label>
+            <input
+              type="number"
+              id="chirpFilter"
+              placeholder="Enter Chirp ID or leave empty for all chirps"
+            />
+          </div>
+          <button id="getChirpsBtn">Get Chirps</button>
+
+          <div id="chirpList" class="chirp-list"></div>
+        </div>
+      </section>
+
+      <section id="users" class="section">
+        <h2>Users</h2>
+
+        <div class="tabs">
+          <button class="tab active" data-target="create-user">
+            Create User
+          </button>
+          <button class="tab" data-target="update-user">Update User</button>
+        </div>
+
+        <div id="create-user" class="tab-content active">
+          <form id="createUserForm">
+            <div class="form-group">
+              <label for="createEmail">Email:</label>
+              <input type="email" id="createEmail" required />
+            </div>
+            <div class="form-group">
+              <label for="createPassword">Password:</label>
+              <input type="password" id="createPassword" required />
+            </div>
+            <button type="submit">Create User</button>
+          </form>
+
+          <div id="createUserResult" class="result hidden"></div>
+        </div>
+
+        <div id="update-user" class="tab-content">
+          <div class="auth-info">
+            Please login first to update your profile.
+          </div>
+
+          <form id="updateUserForm">
+            <div class="form-group">
+              <label for="updateEmail">New Email:</label>
+              <input type="email" id="updateEmail" required />
+            </div>
+            <div class="form-group">
+              <label for="updatePassword"
+                >New Password (leave empty to keep current):</label
+              >
+              <input type="password" id="updatePassword" />
+            </div>
+            <button type="submit">Update Profile</button>
+          </form>
+
+          <div id="updateUserResult" class="result hidden"></div>
+        </div>
+      </section>
+
+      <section id="auth" class="section">
+        <h2>Authentication</h2>
+
+        <div class="tabs">
+          <button class="tab active" data-target="login">Login</button>
+          <button class="tab" data-target="refresh-token">Refresh Token</button>
+          <button class="tab" data-target="revoke-token">Revoke Token</button>
+        </div>
+
+        <div id="login" class="tab-content active">
+          <form id="loginForm">
+            <div class="form-group">
+              <label for="loginEmail">Email:</label>
+              <input type="email" id="loginEmail" required />
+            </div>
+            <div class="form-group">
+              <label for="loginPassword">Password:</label>
+              <input type="password" id="loginPassword" required />
+            </div>
+            <button type="submit">Login</button>
+          </form>
+
+          <div id="loginResult" class="result hidden"></div>
+        </div>
+
+        <div id="refresh-token" class="tab-content">
+          <div class="auth-info">
+            Use this to get a new access token using your refresh token.
+          </div>
+
+          <form id="refreshTokenForm">
+            <button type="submit">Refresh Token</button>
+          </form>
+
+          <div id="refreshTokenResult" class="result hidden"></div>
+        </div>
+
+        <div id="revoke-token" class="tab-content">
+          <div class="auth-info">
+            Use this to invalidate your refresh token (logout).
+          </div>
+
+          <form id="revokeTokenForm">
+            <button type="submit">Revoke Token</button>
+          </form>
+
+          <div id="revokeTokenResult" class="result hidden"></div>
+        </div>
+      </section>
+
+      <section id="admin" class="section">
+        <h2>Admin Functions</h2>
+
+        <div class="tabs">
+          <button class="tab active" data-target="health-check">
+            Health Check
+          </button>
+          <button class="tab" data-target="metrics">Metrics</button>
+          <button class="tab" data-target="reset">Reset</button>
+          <button class="tab" data-target="polka-webhook">Polka Webhook</button>
+        </div>
+
+        <div id="health-check" class="tab-content active">
+          <button id="healthCheckBtn">Check API Health</button>
+          <div id="healthCheckResult" class="result hidden"></div>
+        </div>
+
+        <div id="metrics" class="tab-content">
+          <button id="getMetricsBtn">Get Metrics</button>
+          <div id="metricsResult" class="result hidden"></div>
+        </div>
+
+        <div id="reset" class="tab-content">
+          <div class="auth-info warning">
+            Warning: This will reset all application data.
+          </div>
+          <button id="resetBtn">Reset Application</button>
+          <div id="resetResult" class="result hidden"></div>
+        </div>
+
+        <div id="polka-webhook" class="tab-content">
+          <div class="auth-info">
+            Simulates a Polka webhook for upgrading a user.
+          </div>
+
+          <form id="polkaWebhookForm">
+            <div class="form-group">
+              <label for="userID">User ID:</label>
+              <input type="number" id="userID" required />
+            </div>
+            <div class="form-group">
+              <label for="event">Event:</label>
+              <select id="event" required>
+                <option value="user.upgraded">user.upgraded</option>
+              </select>
+            </div>
+            <button type="submit">Send Webhook</button>
+          </form>
+
+          <div id="polkaWebhookResult" class="result hidden"></div>
+        </div>
+      </section>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <p>&copy; 2023 Chirpy. All rights reserved.</p>
+      </div>
+    </footer>
+
+    <script>
+      // Store auth tokens
+      let authTokens = {
+        accessToken: localStorage.getItem("chirpy_access_token"),
+        refreshToken: localStorage.getItem("chirpy_refresh_token"),
+      };
+
+      // User info
+      let currentUser = JSON.parse(
+        localStorage.getItem("chirpy_user") || "null",
+      );
+
+      // Base API URL
+      const API_BASE_URL = "/api";
+
+      // Helper functions
+      function showNotification(message, type = "success") {
+        const notification = document.getElementById("notification");
+        notification.textContent = message;
+        notification.className = `notification ${type}`;
+
+        // Auto hide after 5 seconds
+        setTimeout(() => {
+          notification.className = "notification hidden";
+        }, 5000);
+      }
+
+      function showResult(elementId, data) {
+        const element = document.getElementById(elementId);
+        element.textContent =
+          typeof data === "object" ? JSON.stringify(data, null, 2) : data;
+        element.classList.remove("hidden");
+      }
+
+      async function fetchAPI(endpoint, options = {}) {
+        try {
+          // Add Authorization header if we have an access token
+          if (
+            authTokens.accessToken &&
+            !endpoint.includes("/login") &&
+            !endpoint.includes("/users")
+          ) {
+            options.headers = {
+              ...options.headers,
+              Authorization: `Bearer ${authTokens.accessToken}`,
+            };
+          }
+
+          const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
+          const contentType = response.headers.get("content-type");
+
+          // Parse response based on content type
+          let data;
+          if (contentType && contentType.includes("application/json")) {
+            data = await response.json();
+          } else {
+            data = await response.text();
+          }
+
+          if (!response.ok) {
+            throw new Error(data.error || "API request failed");
+          }
+
+          return { ok: true, data };
+        } catch (error) {
+          showNotification(error.message, "error");
+          return { ok: false, error: error.message };
+        }
+      }
+
+      function updateAuthInfo() {
+        const authInfoElements = document.querySelectorAll(".auth-info");
+
+        if (authTokens.accessToken) {
+          authInfoElements.forEach((element) => {
+            element.textContent = `Logged in as: ${currentUser?.email || "User"}`;
+          });
+        } else {
+          // Reset to default messages
+          document.querySelector("#create-chirp .auth-info").textContent =
+            "Please login first to create chirps.";
+          document.querySelector("#update-user .auth-info").textContent =
+            "Please login first to update your profile.";
+          document.querySelector("#refresh-token .auth-info").textContent =
+            "Use this to get a new access token using your refresh token.";
+          document.querySelector("#revoke-token .auth-info").textContent =
+            "Use this to invalidate your refresh token (logout).";
+        }
+      }
+
+      function logout() {
+        authTokens.accessToken = null;
+        authTokens.refreshToken = null;
+        currentUser = null;
+        localStorage.removeItem("chirpy_access_token");
+        localStorage.removeItem("chirpy_refresh_token");
+        localStorage.removeItem("chirpy_user");
+        updateAuthInfo();
+        showNotification("Logged out successfully");
+      }
+
+      // Tab functionality
+      document.querySelectorAll(".tabs .tab").forEach((tab) => {
+        tab.addEventListener("click", () => {
+          // Get the container that holds these tabs
+          const tabContainer = tab.closest(".section");
+
+          // Remove active class from all tabs in this container
+          tabContainer
+            .querySelectorAll(".tab")
+            .forEach((t) => t.classList.remove("active"));
+
+          // Add active class to clicked tab
+          tab.classList.add("active");
+
+          // Hide all tab content in this container
+          tabContainer
+            .querySelectorAll(".tab-content")
+            .forEach((content) => content.classList.remove("active"));
+
+          // Show the corresponding tab content
+          const targetId = tab.dataset.target;
+          tabContainer.querySelector(`#${targetId}`).classList.add("active");
+        });
+      });
+
+      // Event listeners for forms and buttons
+      // Health Check
+      document
+        .getElementById("healthCheckBtn")
+        .addEventListener("click", async () => {
+          const result = await fetchAPI("/healthz");
+          showResult(
+            "healthCheckResult",
+            result.ok ? "API is healthy! 🟢" : "API is not responding ⛔",
+          );
+        });
+
+      // Get Metrics
+      document
+        .getElementById("getMetricsBtn")
+        .addEventListener("click", async () => {
+          const result = await fetchAPI("/admin/metrics");
+          showResult("metricsResult", result.data);
+        });
+
+      // Reset Application
+      document
+        .getElementById("resetBtn")
+        .addEventListener("click", async () => {
+          if (
+            confirm(
+              "Are you sure you want to reset all application data? This cannot be undone.",
+            )
+          ) {
+            const result = await fetchAPI("/admin/reset", {
+              method: "POST",
+            });
+            showResult("resetResult", result.data);
+            if (result.ok) {
+              showNotification("Application data has been reset");
+            }
+          }
+        });
+
+      // Create User
+      document
+        .getElementById("createUserForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          const email = document.getElementById("createEmail").value;
+          const password = document.getElementById("createPassword").value;
+
+          const result = await fetchAPI("/users", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ email, password }),
+          });
+
+          showResult("createUserResult", result.data);
+
+          if (result.ok) {
+            showNotification("User created successfully!");
+            document.getElementById("createUserForm").reset();
+          }
+        });
+
+      // Update User
+      document
+        .getElementById("updateUserForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          if (!authTokens.accessToken) {
+            showNotification("Please login first", "error");
+            return;
+          }
+
+          const email = document.getElementById("updateEmail").value;
+          const password = document.getElementById("updatePassword").value;
+
+          const userData = { email };
+          if (password) userData.password = password;
+
+          const result = await fetchAPI("/users", {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(userData),
+          });
+
+          showResult("updateUserResult", result.data);
+
+          if (result.ok) {
+            showNotification("Profile updated successfully!");
+            if (currentUser) {
+              currentUser.email = email;
+              localStorage.setItem("chirpy_user", JSON.stringify(currentUser));
+              updateAuthInfo();
+            }
+            document.getElementById("updateUserForm").reset();
+          }
+        });
+
+      // Login
+      document
+        .getElementById("loginForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          const email = document.getElementById("loginEmail").value;
+          const password = document.getElementById("loginPassword").value;
+
+          const result = await fetchAPI("/login", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ email, password }),
+          });
+
+          showResult("loginResult", result.data);
+
+          if (result.ok) {
+            authTokens.accessToken = result.data.token;
+            authTokens.refreshToken = result.data.refresh_token;
+
+            localStorage.setItem("chirpy_access_token", authTokens.accessToken);
+            localStorage.setItem(
+              "chirpy_refresh_token",
+              authTokens.refreshToken,
+            );
+
+            currentUser = {
+              id: result.data.id,
+              email: result.data.email,
+              is_chirpy_red: result.data.is_chirpy_red,
+            };
+
+            localStorage.setItem("chirpy_user", JSON.stringify(currentUser));
+
+            updateAuthInfo();
+            showNotification("Logged in successfully!");
+            document.getElementById("loginForm").reset();
+          }
+        });
+
+      // Refresh Token
+      document
+        .getElementById("refreshTokenForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          if (!authTokens.refreshToken) {
+            showNotification("No refresh token available", "error");
+            return;
+          }
+
+          const result = await fetchAPI("/refresh", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${authTokens.refreshToken}`,
+            },
+          });
+
+          showResult("refreshTokenResult", result.data);
+
+          if (result.ok) {
+            authTokens.accessToken = result.data.token;
+            localStorage.setItem("chirpy_access_token", authTokens.accessToken);
+            showNotification("Token refreshed successfully!");
+          }
+        });
+
+      // Revoke Token
+      document
+        .getElementById("revokeTokenForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          if (!authTokens.refreshToken) {
+            showNotification("No refresh token to revoke", "error");
+            return;
+          }
+
+          const result = await fetchAPI("/revoke", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${authTokens.refreshToken}`,
+            },
+          });
+
+          showResult(
+            "revokeTokenResult",
+            result.data || "Token revoked successfully",
+          );
+
+          if (result.ok) {
+            logout();
+          }
+        });
+
+      // Create Chirp
+      document
+        .getElementById("createChirpForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          if (!authTokens.accessToken) {
+            showNotification("Please login first", "error");
+            return;
+          }
+
+          const body = document.getElementById("chirpContent").value;
+
+          const result = await fetchAPI("/chirps", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ body }),
+          });
+
+          showResult("createChirpResult", result.data);
+
+          if (result.ok) {
+            showNotification("Chirp created successfully!");
+            document.getElementById("createChirpForm").reset();
+          }
+        });
+
+      // Get Chirps
+      document
+        .getElementById("getChirpsBtn")
+        .addEventListener("click", async () => {
+          const chirpId = document.getElementById("chirpFilter").value;
+
+          let endpoint = "/chirps";
+          if (chirpId) {
+            endpoint = `/chirps/${chirpId}`;
+          }
+
+          const result = await fetchAPI(endpoint);
+
+          const chirpListElement = document.getElementById("chirpList");
+          chirpListElement.innerHTML = "";
+
+          if (result.ok) {
+            if (Array.isArray(result.data)) {
+              // Multiple chirps
+              if (result.data.length === 0) {
+                chirpListElement.innerHTML = "<p>No chirps found.</p>";
+              } else {
+                result.data.forEach((chirp) => {
+                  renderChirp(chirp, chirpListElement);
+                });
+              }
+            } else {
+              // Single chirp
+              renderChirp(result.data, chirpListElement);
+            }
+          } else {
+            chirpListElement.innerHTML = `<p>Error: ${result.error || "Failed to fetch chirps"}</p>`;
+          }
+        });
+
+      // Polka Webhook
+      document
+        .getElementById("polkaWebhookForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          const user_id = document.getElementById("userID").value;
+          const event = document.getElementById("event").value;
+
+          const result = await fetchAPI("/polka/webhooks", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              event,
+              data: {
+                user_id: parseInt(user_id),
+              },
+            }),
+          });
+
+          showResult(
+            "polkaWebhookResult",
+            result.data || "Webhook processed successfully",
+          );
+
+          if (result.ok) {
+            showNotification("User upgraded successfully!");
+            document.getElementById("polkaWebhookForm").reset();
+          }
+        });
+
+      function renderChirp(chirp, container) {
+        const chirpElement = document.createElement("div");
+        chirpElement.className = "chirp";
+
+        chirpElement.innerHTML = `
+                <div class="chirp-header">
+                    <span class="chirp-author">User #${chirp.author_id}</span>
+                    <span> · Chirp #${chirp.id}</span>
+                </div>
+                <div class="chirp-content">${chirp.body}</div>
+                <div class="chirp-actions">
+                    ${
+                      currentUser && currentUser.id === chirp.author_id
+                        ? `<button class="btn-delete" data-id="${chirp.id}">Delete</button>`
+                        : ""
+                    }
+                </div>
+            `;
+
+        container.appendChild(chirpElement);
+
+        // Add event listener for delete button
+        const deleteBtn = chirpElement.querySelector(".btn-delete");
+        if (deleteBtn) {
+          deleteBtn.addEventListener("click", async () => {
+            if (confirm("Are you sure you want to delete this chirp?")) {
+              const chirpId = deleteBtn.dataset.id;
+              const result = await fetchAPI(`/chirps/${chirpId}`, {
+                method: "DELETE",
+              });
+
+              if (result.ok) {
+                chirpElement.remove();
+                showNotification("Chirp deleted successfully!");
+              }
+            }
+          });
+        }
+      }
+
+      // Initialize the app
+      function initApp() {
+        updateAuthInfo();
+
+        // If we have tokens, pre-fill the email field on update profile
+        if (currentUser && currentUser.email) {
+          document.getElementById("updateEmail").value = currentUser.email;
+        }
+      }
+
+      // Call init function when the page loads
+      document.addEventListener("DOMContentLoaded", initApp);
+    </script>
+  </body>
+</html>

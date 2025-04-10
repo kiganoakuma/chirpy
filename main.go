@@ -21,8 +21,8 @@ type apiConfig struct {
 }
 
 func main() {
-	const filepathRoot = "."
-	const port = "8080"
+	const filepathRoot = "./static"
+	const port = "8991"
 
 	godotenv.Load()
 	dbURL := os.Getenv("DB_URL")
